@@ -6,6 +6,10 @@ const jwt = require('jsonwebtoken');
 const keys = require('../../config/keys');
 const password = require('passport');
 
+//Load Input Validation
+const validateRegistserInput = require('../../validator/register');
+const validateLoginInput = require('../../validator/login');
+
 //Load Model
 const User = require('../../models/User');
 
@@ -22,9 +26,18 @@ router.get('/test', (req, res) =>
 // @desc    Register new User
 // @access  Public
 router.post('/register', (req, res) => {
+  //Pull out error from Register validation
+  const { errors, isValid } = validateRegistserInput(req.body);
+
+  //Check validation
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
   User.findOne({ email: req.body.email }).then(user => {
     if (user) {
-      return res.status(400).json({ email: 'Email already exists' });
+      errors.email = 'Email already exists';
+      return res.status(400).json(errors);
     } else {
       const profileimg = gravatar.url(req.body.email, {
         s: '200',
@@ -56,14 +69,27 @@ router.post('/register', (req, res) => {
 // @desc    Login User or retuning JWT Token
 // @access  Public
 router.post('/login', (req, res) => {
+  //Pull out error from Login validation
+  const { errors, isValid } = validateLoginInput(req.body);
+
+  //Check validation
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
   const email = req.body.email;
   const password = req.body.password;
 
   //Find user by email
-  User.findOne({ email }).then(user => {
+  User.findOne({
+    email
+  }).then(user => {
     //Check for user
     if (!user) {
-      return res.status(404).json({ email: 'User not found' });
+      errors.email = 'User not found!';
+      return res.status(404).json({
+        errors
+      });
     }
 
     //Check password
@@ -76,14 +102,24 @@ router.post('/login', (req, res) => {
           profileimg: user.profileimg
         };
         //Sign the Token
-        jwt.sign(payload, keys.secret, { expiresIn: 3600 }, (err, token) => {
-          res.json({
-            success: true,
-            token: 'Bearer' + token
-          });
-        });
+        jwt.sign(
+          payload,
+          keys.secret,
+          {
+            expiresIn: 3600
+          },
+          (err, token) => {
+            res.json({
+              success: true,
+              token: 'Bearer' + token
+            });
+          }
+        );
       } else {
-        return res.status(404).json({ password: 'Password not correct' });
+        errors.password = 'Password not correct!';
+        return res.status(404).json({
+          errors
+        });
       }
     });
   });
