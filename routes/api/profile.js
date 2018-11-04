@@ -7,6 +7,9 @@ const passport = require('passport'); //use this for protected routes
 const User = require('../../models/User');
 const Profile = require('../../models/Profile');
 
+//Load Input Validation
+const validateProfileInput = require('../../validator/profile');
+
 // @route   GET api/profile/test
 // @desc    Tests profile route
 // @access  Public
@@ -43,6 +46,14 @@ router.post(
   '/',
   passport.authenticate('jwt', { session: false }),
   (req, res) => {
+    const { errors, isValid } = validateProfileInput(req.body);
+
+    //Check that validation
+    if (!isValid) {
+      //Return errors
+      return res.status(400).json(errors);
+    }
+
     //Get fields
     const profileField = {};
     profileField.user = req.user.id;
@@ -56,14 +67,14 @@ router.post(
     if (req.body.studyType) profileField.studyType = req.body.studyType;
     if (req.body.zone) profileField.zone = req.body.zone;
     if (req.body.district) profileField.district = req.body.district;
-    if (req.body.district) profileField.university = req.body.university;
-    if (req.body.district)
+    if (req.body.university) profileField.university = req.body.university;
+    if (req.body.institutionName)
       profileField.institutionName = req.body.institutionName;
-    if (req.body.district) profileField.course = req.body.course;
-    if (req.body.district) profileField.yearStarted = req.body.yearStarted;
-    if (req.body.district)
+    if (req.body.course) profileField.course = req.body.course;
+    if (req.body.yearStarted) profileField.yearStarted = req.body.yearStarted;
+    if (req.body.lastYearOfStudy)
       profileField.lastYearOfStudy = req.body.lastYearOfStudy;
-    if (req.body.district) profileField.course = req.body.course;
+    if (req.body.course) profileField.course = req.body.course;
 
     //Social
     profileField.social = {};
