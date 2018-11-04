@@ -28,6 +28,7 @@ router.get(
   (req, res) => {
     let errors = {};
     Profile.findOne({ user: req.user.id })
+      .populate('user', ['name', 'profileimg'])
       .then(profile => {
         if (!profile) {
           errors.noprofile = 'No profile for this user!';
